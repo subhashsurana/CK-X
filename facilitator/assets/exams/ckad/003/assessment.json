@@ -1,0 +1,427 @@
+{
+    "questions": [
+        {
+            "id": "1",
+            "namespace": "q1-sidecar",
+            "machineHostname": "ckad9999",
+            "question": "The DevOps team is adopting native sidecar containers in Kubernetes 1.28+.\n\nCreate a Pod named `sidecar-pod` in the `q1-sidecar` namespace.\n\n1. Main container: \n   - Name: `app`\n   - Image: `busybox`\n   - Command: `['sh', '-c', 'while true; do sleep 3600; done']`\n\n2. Sidecar container (MUST be configured as a native sidecar using `initContainers`): \n   - Name: `sidecar`\n   - Image: `nginx:alpine`\n   - Restart policy: `Always`\n\nEnsure the namespace is created first.",
+            "concepts": ["init-containers", "native-sidecar", "pods"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Namespace exists",
+                    "verificationScriptFile": "q1_s1_namespace.sh",
+                    "expectedOutput": "0", "weightage": 1
+                },
+                {
+                    "id": "2",
+                    "description": "Pod exists with correct native sidecar configuration",
+                    "verificationScriptFile": "q1_s2_sidecar.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "2",
+            "namespace": "q2-config",
+            "machineHostname": "ckad9999",
+            "question": "Create a ConfigMap named `app-config` in the `q2-config` namespace with the following data:\n`PORT=8080`\n`THEME=dark`\n\nCreate a Pod named `config-pod` using the `nginx` image.\n\n1. Load the `PORT` key as an environment variable named `APP_PORT`.\n2. Mount the entire ConfigMap as a volume at `/etc/app-config`.\n\nEnsure the namespace exists before creating the resources.",
+            "concepts": ["configmaps", "volumes", "env-vars"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Namespace exists",
+                    "verificationScriptFile": "q2_s1_namespace.sh",
+                    "expectedOutput": "0", "weightage": 1
+                },
+                {
+                    "id": "2",
+                    "description": "ConfigMap is created correctly",
+                    "verificationScriptFile": "q2_s2_configmap.sh",
+                    "expectedOutput": "0", "weightage": 2
+                },
+                {
+                    "id": "3",
+                    "description": "Pod uses env vars and Volume mounts correctly",
+                    "verificationScriptFile": "q2_s3_pod.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "3",
+            "namespace": "q3-api",
+            "machineHostname": "ckad9999",
+            "question": "The API Archaeologist: You have an old manifest at `/tmp/old-cronjob.yaml` that uses the deprecated `batch/v1beta1` API version.\n\n1. Edit the manifest to upgrade the `apiVersion` from `batch/v1beta1` to `batch/v1` and save it as `/tmp/new-cronjob.yaml`.\n2. Apply the new manifest to create the CronJob in the `q3-api` namespace.\n\nNote: The `q3-api` namespace will be pre-created by the setup script, and the `/tmp/old-cronjob.yaml` will be placed on your node.",
+            "concepts": ["api-deprecation", "manifest-migration", "cronjobs"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Converted manifest exists at /tmp/new-cronjob.yaml",
+                    "verificationScriptFile": "q3_s1_manifest.sh",
+                    "expectedOutput": "0", "weightage": 2
+                },
+                {
+                    "id": "2",
+                    "description": "CronJob is successfully running in batch/v1",
+                    "verificationScriptFile": "q3_s2_cronjob.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "4",
+            "namespace": "q4-helm",
+            "machineHostname": "ckad9999",
+            "question": "The Helm Expedition: A release named `my-release` of the Bitnami `nginx` chart has already been installed in the `q4-helm` namespace.\n\n1. Upgrade the release to use the exact image repository `nginx` and tag `1.25.0` via Helm.\n2. Realizing this version causes issues, rollback the release to revision `1`.\n3. Export the helm release history to `/tmp/helm-history.txt`.",
+            "concepts": ["helm", "upgrade", "rollback"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Release rolled back to revision 1",
+                    "verificationScriptFile": "q4_s1_rollback.sh",
+                    "expectedOutput": "0", "weightage": 3
+                },
+                {
+                    "id": "2",
+                    "description": "History exported securely",
+                    "verificationScriptFile": "q4_s2_history.sh",
+                    "expectedOutput": "0", "weightage": 1
+                }
+            ]
+        },
+        {
+            "id": "5",
+            "namespace": "q5-kustomize",
+            "machineHostname": "ckad9999",
+            "question": "The Kustomize Kaleidoscope: A base kustomization directory exists at `/tmp/kustomize-base`.\n\n1. Create an overlay directory at `/tmp/kustomize-overlay` that uses `/tmp/kustomize-base` as its base.\n2. Add a `kustomization.yaml` in the overlay that scales the deployment `web-app` replicas to `3` and injects a ConfigMapGenerator named `web-config` containing literal `color=blue`.\n3. Apply the fully built overlay to the `q5-kustomize` namespace using `kubectl apply -k`.",
+            "concepts": ["kustomize", "patch", "configmap-generator"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Kustomization applied with replicas scaled to 3",
+                    "verificationScriptFile": "q5_s1_replicas.sh",
+                    "expectedOutput": "0", "weightage": 3
+                },
+                {
+                    "id": "2",
+                    "description": "ConfigMapGenerator injected correctly",
+                    "verificationScriptFile": "q5_s2_configmap.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "6",
+            "namespace": "q6-blue-green",
+            "machineHostname": "ckad9999",
+            "question": "The Blue-Green Bridge: In the `q6-blue-green` namespace, two Deployments exist: `app-blue` (v1) and `app-green` (v2). A Service `app-service` currently points to `app-blue`.\n\n1. Perform a Blue/Green cutover by updating the `app-service` Service to route traffic entirely to the `app-green` deployment.\n2. Do NOT modify the deployments themselves.",
+            "concepts": ["services", "deployments", "labels", "blue-green"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Service routes traffic to app-green",
+                    "verificationScriptFile": "q6_s1_service.sh",
+                    "expectedOutput": "0", "weightage": 4
+                }
+            ]
+        },
+        {
+            "id": "7",
+            "namespace": "q7-canary",
+            "machineHostname": "ckad9999",
+            "question": "The Canary Cage: In the `q7-canary` namespace, a Deployment `app-stable` running image `nginx:1.24` has 4 replicas. A Service `app-svc` routes traffic to it using selector `app=frontend`.\n\n1. Create a Canary Deployment named `app-canary` running image `nginx:1.25` with 1 replica.\n2. Ensure it receives exactly 20% of the overall traffic (1 canary out of 5 total pods) by assigning the appropriate labels so that the `app-svc` Service routes traffic to both.",
+            "concepts": ["deployments", "canary", "services", "labels"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Canary deployment created with 1 replica and correct labels",
+                    "verificationScriptFile": "q7_s1_canary.sh",
+                    "expectedOutput": "0", "weightage": 4
+                }
+            ]
+        },
+        {
+            "id": "8",
+            "namespace": "q8-security",
+            "machineHostname": "ckad9999",
+            "question": "The Fortress: Create a Pod named `secure-vault` in the `q8-security` namespace using the `nginx:alpine` image.\n\n1. Set `runAsNonRoot: true` at the pod level.\n2. Assign `runAsUser: 2000` at the pod level.\n3. At the container level, drop the `NET_RAW` capability.\n4. Set `readOnlyRootFilesystem: true` for the container.\n\nEnsure the namespace is created first.",
+            "concepts": ["security-context", "capabilities", "non-root", "readonly"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Namespace exists",
+                    "verificationScriptFile": "q8_s1_namespace.sh",
+                    "expectedOutput": "0", "weightage": 1
+                },
+                {
+                    "id": "2",
+                    "description": "Security context applied correctly",
+                    "verificationScriptFile": "q8_s2_security.sh",
+                    "expectedOutput": "0", "weightage": 5
+                }
+            ]
+        },
+        {
+            "id": "9",
+            "namespace": "q9-identity",
+            "machineHostname": "ckad9999",
+            "question": "The Identity Crisis: In the `q9-identity` namespace, a Pod named `api-consumer` is using the `default` ServiceAccount. However, it should use a custom identity.\n\n1. Create a ServiceAccount named `api-reader`.\n2. Configure the `api-reader` ServiceAccount so it DOES NOT automatically mount API credentials.\n3. Modify the existing `api-consumer` Pod (you may need to recreate it if necessary) to use this new `api-reader` ServiceAccount.\n\nAssume the namespace and pod are already created by the setup script.",
+            "concepts": ["service-accounts", "automount-token", "pods"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "ServiceAccount created without automount",
+                    "verificationScriptFile": "q9_s1_sa.sh",
+                    "expectedOutput": "0", "weightage": 3
+                },
+                {
+                    "id": "2",
+                    "description": "Pod uses the api-reader ServiceAccount",
+                    "verificationScriptFile": "q9_s2_pod.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "10",
+            "namespace": "q10-ingress",
+            "machineHostname": "ckad9999",
+            "question": "The Traffic Director: An Ingress controller is active in your cluster.\n\n1. Create an Ingress resource named `main-ingress` in the `q10-ingress` namespace that routes traffic for the host `myapp.com`.\n2. Requests to `/api(/|$)(.*)` should be rewritten to `/\\2` and routed to the `api-svc` service on port `8080`.\n3. Create a Service named `external-db` in the `q10-ingress` namespace of type `ExternalName` that points to `database.external.com`.\n\nEnsure the namespace exists.",
+            "concepts": ["ingress", "path-rewrite", "external-name", "services"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Ingress correctly routes /api with rewrite rule",
+                    "verificationScriptFile": "q10_s1_ingress.sh",
+                    "expectedOutput": "0", "weightage": 4
+                },
+                {
+                    "id": "2",
+                    "description": "ExternalName Service created correctly",
+                    "verificationScriptFile": "q10_s2_external.sh",
+                    "expectedOutput": "0", "weightage": 2
+                }
+            ]
+        },
+        {
+            "id": "11",
+            "namespace": "q11-probes",
+            "machineHostname": "ckad9999",
+            "question": "The Observatory: A legacy application takes 60 seconds to fully initialize before it is ready to handle health checks.\n\n1. Create a Pod named `slow-app` in the `q11-probes` namespace running `nginx`.\n2. Configure a `startupProbe` that checks HTTP GET `/` on port `80` with a `periodSeconds` of 5 and `failureThreshold` of 20 (allowing up to 100s for initialization).\n3. Configure a `livenessProbe` checking HTTP GET `/health` on port `80` with `periodSeconds` of 10.\n4. Configure a `readinessProbe` checking TCP port `80` with `periodSeconds` of 5.\n\nEnsure the namespace is created first.",
+            "concepts": ["startupprobe", "livenessprobe", "readinessprobe", "pods"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "StartupProbe configured to allow up to 100s",
+                    "verificationScriptFile": "q11_s1_startup.sh",
+                    "expectedOutput": "0", "weightage": 3
+                },
+                {
+                    "id": "2",
+                    "description": "Liveness and Readiness configured correctly",
+                    "verificationScriptFile": "q11_s2_probes.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "12",
+            "namespace": "q12-network",
+            "machineHostname": "ckad9999",
+            "question": "The Network Lockdown: The `q12-network` namespace currently permits all traffic.\n\n1. Create a NetworkPolicy named `default-deny` that denies ALL ingress and egress traffic in the namespace.\n2. Create a NetworkPolicy named `allow-web` that allows ingress traffic on port `80` ONLY to pods with the label `app=web`, strictly from pods with the label `role=gateway`.\n\nEnsure the namespace is created.",
+            "concepts": ["networkpolicies", "security", "ingress", "egress"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Default deny policy created",
+                    "verificationScriptFile": "q12_s1_deny.sh",
+                    "expectedOutput": "0", "weightage": 3
+                },
+                {
+                    "id": "2",
+                    "description": "Allow web policy created correctly",
+                    "verificationScriptFile": "q12_s2_allow.sh",
+                    "expectedOutput": "0", "weightage": 4
+                }
+            ]
+        },
+        {
+            "id": "13",
+            "namespace": "q13-storage",
+            "machineHostname": "ckad9999",
+            "question": "The Persistent Bookshelf: A Deployment named `library` exists in the `q13-storage` namespace, currently saving data to a transient `emptyDir` volume mounted at `/data`.\n\n1. Create a `PersistentVolumeClaim` named `library-pvc` requesting `2Gi` of storage with `ReadWriteOnce` access mode.\n2. Modify the `library` Deployment to replace the `emptyDir` volume with the newly created PVC, ensuring the data is still mounted at `/data`.",
+            "concepts": ["pvc", "volumes", "deployments", "storage"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "PVC library-pvc created with 2Gi",
+                    "verificationScriptFile": "q13_s1_pvc.sh",
+                    "expectedOutput": "0", "weightage": 3
+                },
+                {
+                    "id": "2",
+                    "description": "Deployment library updated to use the PVC",
+                    "verificationScriptFile": "q13_s2_deployment.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "14",
+            "namespace": "q14-oci",
+            "machineHostname": "ckad9999",
+            "question": "The Container Factory: We need to pull, adapt, and export an OCI image directly on the host (outside the cluster).\n\n1. Create a simple `Dockerfile` at `/tmp/q14/Dockerfile` using `alpine:latest` as the base image, and add a file `/hello.txt` containing the word `world`.\n2. Build the image and tag it as `local-alpine:v1`.\n3. Export this image as a tarball to `/opt/oci/local-alpine.tar`.\n\nEnsure `/opt/oci/` directory exists.",
+            "concepts": ["docker", "oci", "build", "tar"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Image local-alpine:v1 exported strictly to /opt/oci/local-alpine.tar",
+                    "verificationScriptFile": "q14_s1_tar.sh",
+                    "expectedOutput": "0", "weightage": 5
+                }
+            ]
+        },
+        {
+            "id": "15",
+            "namespace": "q15-cross-ns",
+            "machineHostname": "ckad9999",
+            "question": "The Cross-Namespace Corridor: A Pod named `frontend` in the `q15-cross-ns` namespace needs to communicate with a Service named `backend-svc` located in the `q15-backend` namespace.\n\n1. The frontend Pod is currently trying to reach the backend using the host `backend-svc`. This fails since they are in different namespaces.\n2. Create a Pod named `frontend-fixed` running `nginx:alpine` in `q15-cross-ns`.\n3. Configure `frontend-fixed` with an environment variable `BACKEND_URL` containing the fully qualified domain name (FQDN) to accurately route to `backend-svc` on port `8080`.",
+            "concepts": ["dns", "services", "namespaces", "fqdn"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "frontend-fixed pod contains the correct FQDN env var",
+                    "verificationScriptFile": "q15_s1_fqdn.sh",
+                    "expectedOutput": "0", "weightage": 4
+                }
+            ]
+        },
+        {
+            "id": "16",
+            "namespace": "q16-quota",
+            "machineHostname": "ckad9999",
+            "question": "The Admission Gatekeeper: The `q16-quota` namespace has a strict `ResourceQuota` requiring all pods to specify CPU and Memory limits.\n\n1. Create a Pod named `limited-pod` running `busybox` (command: `sleep 3600`).\n2. Configure the Pod such that it successfully passes the Admission Controller by setting BOTH CPU requests/limits (e.g., `100m`/`200m`) and Memory requests/limits (e.g., `64Mi`/`128Mi`).",
+            "concepts": ["resourcequotas", "limits", "requests", "pods"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Pod limited-pod is Running",
+                    "verificationScriptFile": "q16_s1_pod.sh",
+                    "expectedOutput": "0", "weightage": 2
+                },
+                {
+                    "id": "2",
+                    "description": "Pod explicitly declares limits and requests",
+                    "verificationScriptFile": "q16_s2_limits.sh",
+                    "expectedOutput": "0", "weightage": 4
+                }
+            ]
+        },
+        {
+            "id": "17",
+            "namespace": "q17-cron",
+            "machineHostname": "ckad9999",
+            "question": "The Resilient Worker: We need a CronJob that handles strict timing and overlap constraints.\n\n1. Create a CronJob named `strict-cron` in the `q17-cron` namespace.\n2. Schedule it to run every hour at minute 30 (`30 * * * *`).\n3. Use the `busybox` image and run command `date`.\n4. Ensure NO parallel executions occur by forbidding concurrent jobs (`concurrencyPolicy: Forbid`).\n5. If the job misses its scheduled time, it MUST NOT start if more than `20` seconds have passed (`startingDeadlineSeconds`).",
+            "concepts": ["cronjobs", "concurrencypolicy", "startingdeadlineseconds"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "CronJob strict-cron created with schedule",
+                    "verificationScriptFile": "q17_s1_cron.sh",
+                    "expectedOutput": "0", "weightage": 2
+                },
+                {
+                    "id": "2",
+                    "description": "ConcurrencyPolicy and StartingDeadlineSeconds configured correctly",
+                    "verificationScriptFile": "q17_s2_constraints.sh",
+                    "expectedOutput": "0", "weightage": 4
+                }
+            ]
+        },
+        {
+            "id": "18",
+            "namespace": "q18-affinity",
+            "machineHostname": "ckad9999",
+            "question": "The Broken Node: Your cluster has a node designated for batch processing with a taint `type=batch:NoSchedule` and a label `disktype=ssd`. \n\n1. Create a Pod named `batch-processor` running `nginx` in the `q18-affinity` namespace.\n2. Configure the pod with a `toleration` to bypass the `type=batch:NoSchedule` taint.\n3. Configure a `nodeAffinity` rule requiring the pod to be scheduled specifically on a node with the label `disktype=ssd`.\n\nEnsure the namespace is created first.",
+            "concepts": ["taints", "tolerations", "node-affinity", "scheduling"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Pod configuration includes toleration for type=batch",
+                    "verificationScriptFile": "q18_s1_toleration.sh",
+                    "expectedOutput": "0", "weightage": 4
+                },
+                {
+                    "id": "2",
+                    "description": "Pod configuration includes required nodeAffinity for disktype=ssd",
+                    "verificationScriptFile": "q18_s2_affinity.sh",
+                    "expectedOutput": "0", "weightage": 4
+                }
+            ]
+        },
+        {
+            "id": "19",
+            "namespace": "q19-secrets",
+            "machineHostname": "ckad9999",
+            "question": "The Vault Transfer: Create a Secret named `db-secret` in the `q19-secrets` namespace with the following literal values:\n`username=appuser`\n`password=s3cur3`\n\nThen create a Pod named `secret-reader` using the `busybox` image with command `sleep 3600`.\n\n1. Load the Secret key `username` into environment variable `DB_USER`.\n2. Load the Secret key `password` into environment variable `DB_PASSWORD`.\n\nEnsure the namespace exists before creating the resources.",
+            "concepts": ["secrets", "pods", "environment-variables"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Secret db-secret created with required keys",
+                    "verificationScriptFile": "q19_s1_secret.sh",
+                    "expectedOutput": "0", "weightage": 2
+                },
+                {
+                    "id": "2",
+                    "description": "Pod secret-reader consumes secret keys as environment variables",
+                    "verificationScriptFile": "q19_s2_pod.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "20",
+            "namespace": "q20-debug",
+            "machineHostname": "ckad9999",
+            "question": "The Signal Hunt: In the `q20-debug` namespace, a pod named `broken-logger` has already been created and is repeatedly crashing after printing an error.\n\n1. Use built-in Kubernetes CLI tools to inspect the pod logs and save the exact fatal message to `/tmp/q20-fatal.txt`.\n2. Save the current pod listing for the `q20-debug` namespace in wide format to `/tmp/q20-pods.txt`.\n\nNote: The namespace and crashing pod are pre-created by the setup script.",
+            "concepts": ["troubleshooting", "kubectl-logs", "cli-tools", "debugging"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "Fatal message captured from pod logs",
+                    "verificationScriptFile": "q20_s1_fatal.sh",
+                    "expectedOutput": "0", "weightage": 2
+                },
+                {
+                    "id": "2",
+                    "description": "Wide pod listing saved for q20-debug namespace",
+                    "verificationScriptFile": "q20_s2_pods.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        },
+        {
+            "id": "21",
+            "namespace": "q21-crd",
+            "machineHostname": "ckad9999",
+            "question": "The API Extension Forge: Extend Kubernetes with a new custom resource.\n\n1. Create a CustomResourceDefinition named `widgets.apps.ckx.io` with:\n   - Group: `apps.ckx.io`\n   - Version: `v1`\n   - Kind: `Widget`\n   - Plural: `widgets`\n   - Scope: `Namespaced`\n2. Define an OpenAPI v3 schema requiring:\n   - `spec.image` as a string\n   - `spec.replicas` as an integer\n3. Create a custom resource named `blue-widget` in the `q21-crd` namespace with image `nginx:1.25` and replicas `2`.\n\nNote: The namespace `q21-crd` is pre-created by the setup script.",
+            "concepts": ["crd", "custom-resources", "api-extension", "schemas"],
+            "verification": [
+                {
+                    "id": "1",
+                    "description": "CRD widgets.apps.ckx.io created with required schema",
+                    "verificationScriptFile": "q21_s1_crd.sh",
+                    "expectedOutput": "0", "weightage": 3
+                },
+                {
+                    "id": "2",
+                    "description": "Custom resource blue-widget created with correct spec",
+                    "verificationScriptFile": "q21_s2_resource.sh",
+                    "expectedOutput": "0", "weightage": 3
+                }
+            ]
+        }
+    ]
+}
