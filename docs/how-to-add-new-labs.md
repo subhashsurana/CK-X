@@ -259,6 +259,52 @@ Before submitting your lab:
 4. Ensure the answers solve the questions as expected
 5. Check that scoring and evaluation work properly
 
+### Local Validation Loop
+
+Use the repository root as your working directory:
+
+```bash
+git switch -c feat-my-new-lab
+docker compose up --build -d
+```
+
+When you change only exam assets under `facilitator/assets/exams/...`, rebuild the Facilitator container so the updated setup and validation scripts are repackaged into `assets.tar.gz` during container startup:
+
+```bash
+docker compose up --build -d facilitator
+```
+
+Helpful commands while testing:
+
+```bash
+docker compose ps
+docker compose logs -f facilitator
+docker compose logs -f jumphost
+```
+
+Recommended end-to-end test for a lab contribution:
+
+1. Start the simulator with `docker compose up --build -d`.
+2. Open `http://localhost:30080`.
+3. Start your lab from the UI.
+4. Confirm the exam reaches `READY`.
+5. Solve one or more questions exactly as written in `answers.md`.
+6. Run evaluation and confirm the expected verification steps pass.
+7. Make one intentionally incorrect change and confirm the related verification fails.
+
+### Pushing Your Work
+
+After local validation:
+
+```bash
+git status
+git add <files>
+git commit -m "feat: add or update lab content"
+git push -u origin feat-my-new-lab
+```
+
+If the worktree contains unrelated files, stage only the paths that belong to your lab change.
+
 ## Contribution Process
 
 1. Fork the CK-X Simulator repository

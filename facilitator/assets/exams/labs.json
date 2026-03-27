@@ -51,6 +51,16 @@
         "examDurationInMinutes": 60
       },
       {
+        "id": "ckad-003",
+        "assetPath": "assets/exams/ckad/003",
+        "name": "CKAD Comprehensive Lab - 3",
+        "category": "CKAD",
+        "description": "Comprehensive CKAD practice covering native sidecars, regex ingress rewrites, advanced networking, FQDN DNS resolution, secrets, troubleshooting with built-in CLI tools, CRDs, persistent storage migration, and strict cronjob scheduling.",
+        "warmUpTimeInSeconds": 300,
+        "difficulty": "Hard",
+        "examDurationInMinutes": 120
+      },
+      {
         "id": "docker-001",
         "assetPath": "assets/exams/other/001",
         "name": "Docker Speed Run - Core Concepts",

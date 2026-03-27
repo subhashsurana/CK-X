@@ -19,8 +19,14 @@ This document provides step-by-step instructions for setting up and running the 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/ck-x-simulator.git
-cd ck-x-simulator
+git clone git@github.com:subhashsurana/CK-X.git
+cd CK-X
+```
+
+If you are working on a new lab or a substantial content change, create a feature branch first:
+
+```bash
+git switch -c feat-my-change
 ```
 
 ### 2. Configure the Environment
@@ -39,11 +45,11 @@ Review the `compose.yaml` file to understand the service configuration. Key serv
 ### 3. Start the Services
 
 ```bash
-# Build and start all services
-docker-compose up --build
+# Build and start all services in the background
+docker compose up --build -d
 ```
 
-This command will build and start all the services defined in the compose.yaml file.
+This command builds the local images from the current checkout and starts the full simulator stack.
 
 ## Accessing the Application
 
@@ -53,6 +59,12 @@ Once all services are running, access the web interface via Nginx:
 
 ```
 http://localhost:30080
+```
+
+The Facilitator API is also exposed for debugging at:
+
+```
+http://localhost:3001
 ```
 
 ### 2. VNC Remote Desktop
@@ -170,6 +182,17 @@ The facilitator service handles backend operations and communicates with the Kub
 
 ## Development Workflow
 
+### 0. Lab Author Workflow
+
+For assessment and validation work such as `facilitator/assets/exams/...`:
+
+1. Edit the lab files locally.
+2. Rebuild and restart the `facilitator` service so the updated exam assets are copied into the container and repackaged into `assets.tar.gz`.
+3. Open the simulator at `http://localhost:30080`, start the target lab, and run through the scenario.
+4. Review container logs if setup or evaluation fails.
+
+The Facilitator container packages exam `scripts/` into `assets.tar.gz` during startup, so lab asset changes are not picked up until that container is rebuilt or restarted from a fresh image.
+
 ### 1. Modifying Services
 
 To modify a service, edit its corresponding directory and then rebuild:
@@ -177,33 +200,89 @@ To modify a service, edit its corresponding directory and then rebuild:
 ```bash
 # Edit files in the respective service directory
 # Then rebuild and restart the service
-docker-compose up --build <service-name>
+docker compose up --build -d <service-name>
 ```
 
-### 2. Inspecting Logs
+Examples:
+
+```bash
+# Rebuild only the facilitator after changing assessments, answers, or validation scripts
+docker compose up --build -d facilitator
+
+# Rebuild the whole stack after wider application changes
+docker compose up --build -d
+```
+
+### 2. Validating Lab Changes Locally
+
+Typical commands while iterating on a lab:
+
+```bash
+# Check service health and startup state
+docker compose ps
+
+# Follow facilitator logs while the lab is preparing or grading
+docker compose logs -f facilitator
+
+# Follow jumphost logs to see exam setup execution
+docker compose logs -f jumphost
+
+# Open a shell in the facilitator container
+docker compose exec facilitator sh
+```
+
+Suggested smoke test for a new or updated lab:
+
+1. Start the stack with `docker compose up --build -d`.
+2. Open `http://localhost:30080`.
+3. Start the target lab from the UI and wait for it to reach `READY`.
+4. Solve or partially solve the target questions.
+5. Trigger evaluation from the UI.
+6. Confirm the expected validation steps pass or fail.
+
+### 3. Inspecting Logs
 
 ```bash
 # View logs for all services
-docker-compose logs
+docker compose logs
 
 # View logs for a specific service
-docker-compose logs <service-name>
+docker compose logs <service-name>
 
 # Follow logs
-docker-compose logs -f <service-name>
+docker compose logs -f <service-name>
 ```
 
-### 3. Accessing Containers
+### 4. Accessing Containers
 
 ```bash
 # Get shell access to a container
-docker-compose exec <service-name> bash
+docker compose exec <service-name> sh
 
 # Examples:
-docker-compose exec webapp bash
-docker-compose exec facilitator bash
-docker-compose exec k8s-api-server bash
+docker compose exec webapp sh
+docker compose exec facilitator sh
+docker compose exec k8s-api-server sh
 ```
+
+### 5. Pushing Your Branch
+
+After validating your changes locally:
+
+```bash
+# Review only the files you intend to ship
+git status
+git diff
+
+# Stage and commit the specific files you changed
+git add <files>
+git commit -m "feat: describe the change"
+
+# Push the feature branch
+git push -u origin feat-my-change
+```
+
+If the worktree already contains unrelated modifications, stage only the intended files instead of using `git add .`.
 
 ## Troubleshooting
 
@@ -212,27 +291,27 @@ docker-compose exec k8s-api-server bash
 If containers fail to start, check the logs:
 
 ```bash
-docker-compose logs <service-name>
+docker compose logs <service-name>
 ```
 
 ### 2. VNC Connection Issues
 
 ```bash
 # Check if VNC server is running
-docker-compose exec remote-desktop ps aux | grep vnc
+docker compose exec remote-desktop sh -lc 'ps aux | grep vnc'
 
 # Restart VNC service
-docker-compose restart remote-desktop
+docker compose restart remote-desktop
 ```
 
 ### 3. Kubernetes Cluster Issues
 
 ```bash
 # Check cluster status
-docker-compose exec k8s-api-server kubectl cluster-info
+docker compose exec k8s-api-server kubectl cluster-info
 
 # Restart the cluster
-docker-compose restart k8s-api-server
+docker compose restart k8s-api-server
 ```
 
 ### 4. Resource Constraints
