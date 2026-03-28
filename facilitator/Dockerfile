@@ -6,12 +6,12 @@ WORKDIR /usr/src/app
 # Install app dependencies and SSH client for connecting to jumphost
 RUN apk add --no-cache openssh-client
 
-# Install dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
+# Install dependency manifest
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# This repo does not currently ship a facilitator package-lock.json,
+# so npm ci would fail during image builds.
+RUN npm install --omit=dev
 
 # Bundle app source
 COPY . .
