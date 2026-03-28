@@ -116,8 +116,10 @@ spec:
     volumeMounts:
     - name: log-volume
       mountPath: /var/my-log
+  initContainers:
   - name: sidecar
     image: busybox
+    restartPolicy: Always
     command: ["sh", "-c", "while true; do date >> /var/my-log/date.log; sleep 10; done"]
     volumeMounts:
     - name: log-volume
@@ -249,7 +251,7 @@ Save as `config-pod.yaml` and apply:
 kubectl apply -f config-pod.yaml
 ```
 
-## Question 10: Create a Secret named 'db-credentials' in namespace 'workloads' containing username=admin and password=securepass. Then create a Pod named 'secure-pod' using 'mysql:5.7' image with these credentials set as environment variables DB_USER and DB_PASSWORD
+## Question 10: Create a Secret named 'db-credentials' in namespace 'workloads' containing username=admin and password=securepass. Then create a Pod named 'secure-pod' using 'mysql:8' image with these credentials set as environment variables MYSQL_USER and MYSQL_PASSWORD
 
 ```bash
 # Create the Secret
@@ -266,23 +268,20 @@ metadata:
 spec:
   containers:
   - name: mysql
-    image: mysql:latest
+    image: mysql:8
     env:
-    - name: DB_USER
+    - name: MYSQL_USER
       valueFrom:
         secretKeyRef:
           name: db-credentials
           key: username
-    - name: DB_PASSWORD
+    - name: MYSQL_PASSWORD
       valueFrom:
         secretKeyRef:
           name: db-credentials
           key: password
-    - name: MYSQL_ROOT_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: db-credentials
-          key: password
+    - name: MYSQL_RANDOM_ROOT_PASSWORD
+      value: "yes"
   restartPolicy: Always
 ```
 

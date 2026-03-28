@@ -168,8 +168,8 @@
             "id": "6",
             "namespace": "troubleshooting",
             "machineHostname": "ckad9999",
-            "question": "The DevOps team needs a specialized pod to help with monitoring and logging. \n\nCreate a multi-container pod named `sidecar-pod` in the `troubleshooting` namespace with the following specifications: \n\n1. Main container: \n   - Image: `nginx`\n   - Container name: `nginx` \n   - Purpose: Serve web content \n\n2. Sidecar container: \n   - Image: `busybox`\n   - Container name: `sidecar` \n   - Command: [`sh`, `-c`, `while true; do date >> /var/my-log/date.log; sleep 10; done`] \n\n3. Shared volume configuration: \n   - Volume name: `log-volume` \n   - Mount path: `/var/my-log` in both containers \n\nThis demonstrates the sidecar container pattern for extending application functionality.",
-            "concepts": ["pods", "multi-container", "volumes", "sidecar-pattern"],
+            "question": "The DevOps team needs a specialized pod to help with monitoring and logging. \n\nCreate a multi-container pod named `sidecar-pod` in the `troubleshooting` namespace with the following specifications: \n\n1. Main container: \n   - Image: `nginx`\n   - Container name: `nginx` \n   - Purpose: Serve web content \n\n2. Sidecar container (MUST be a native sidecar using `initContainers` with `restartPolicy: Always`):\n   - Image: `busybox`\n   - Container name: `sidecar` \n   - Command: [`sh`, `-c`, `while true; do date >> /var/my-log/date.log; sleep 10; done`] \n\n3. Shared volume configuration: \n   - Volume name: `log-volume` \n   - Mount path: `/var/my-log` in both containers \n\nThis demonstrates the native sidecar container pattern for extending application functionality.",
+            "concepts": ["pods", "multi-container", "volumes", "sidecar-pattern", "init-containers"],
             "verification": [
                 {
                     "id": "1",
@@ -274,7 +274,7 @@
             "id": "10",
             "namespace": "workloads",
             "machineHostname": "ckad9999",
-            "question": "The database team needs to securely deploy a MySQL instance with proper credential management. \n\nCreate a Secret named `db-credentials` in namespace `workloads` containing two sensitive values: `username=admin` and `password=securepass`. \n\nThen create a Pod named `secure-pod` using the `mysql:5.7` image that uses these credentials. \n\nConfigure the pod to access the Secret values as environment variables named `DB_USER` and `DB_PASSWORD` respectively. \n\nThis pattern demonstrates secure handling of sensitive information in Kubernetes without hardcoding credentials in the pod specification. Ensure the MySQL container is properly configured to use these environment variables for authentication.",
+            "question": "The database team needs to securely deploy a MySQL instance with proper credential management. \n\nCreate a Secret named `db-credentials` in namespace `workloads` containing two sensitive values: `username=admin` and `password=securepass`. \n\nThen create a Pod named `secure-pod` using the `mysql:8` image that uses these credentials. \n\nConfigure the pod to access the Secret values as environment variables named `MYSQL_USER` and `MYSQL_PASSWORD` respectively. Also set the environment variable `MYSQL_RANDOM_ROOT_PASSWORD=yes` (as a literal value) to ensure the container starts successfully. \n\nThis pattern demonstrates secure handling of sensitive information in Kubernetes without hardcoding credentials in the pod specification.",
             "concepts": ["secrets", "pods", "environment-variables", "mysql"],
             "verification": [
                 {
