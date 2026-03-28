@@ -61,13 +61,13 @@ spec:
     image: nginx
     volumeMounts:
     - name: log-volume
-      mountPath: /var/log
+      mountPath: /var/log/app
   - name: sidecar-container
     image: busybox
-    command: ['sh', '-c', 'while true; do echo $(date) >> /var/log/app.log; sleep 5; done']
+    command: ['sh', '-c', 'while true; do echo $(date) >> /var/log/app/app.log; sleep 5; done']
     volumeMounts:
     - name: log-volume
-      mountPath: /var/log
+      mountPath: /var/log/app
   volumes:
   - name: log-volume
     emptyDir: {}
@@ -650,7 +650,7 @@ spec:
   initContainers:
   - name: sidecar-container
     image: busybox
-    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done']
+    command: ['sh', '-c', 'until nslookup myservice.init-containers.svc.cluster.local; do echo waiting for myservice; sleep 2; done']
     volumeMounts:
     - name: log-volume
       mountPath: /shared

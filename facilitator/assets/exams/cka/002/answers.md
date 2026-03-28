@@ -225,6 +225,9 @@ spec:
       capabilities:
         drop:
           - ALL
+    volumeMounts:
+    - name: html
+      mountPath: /usr/share/nginx/html
   volumes:
   - name: html
     emptyDir: {}
@@ -811,7 +814,7 @@ spec:
   serviceAccountName: app-admin
   containers:
   - name: kubectl
-    image: bitnami/kubectl:latest
+    image: bitnami/kubectl:1.28
     command: ["sleep", "3600"]
     volumeMounts:
     - name: token

@@ -69,33 +69,21 @@ fi
 
 echo "✅ Job '$JOB_NAME' uses correct image: $IMAGE"
 
-# Check if the job pod has a command to copy files
+# Check if the job pod has a command to say Hello
 COMMAND=$(kubectl get job $JOB_NAME -n $NAMESPACE -o jsonpath='{.spec.template.spec.containers[0].command}' 2>/dev/null)
 
 if [ -z "$COMMAND" ]; then
-  # Try args if command is not set
   ARGS=$(kubectl get job $JOB_NAME -n $NAMESPACE -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null)
-  
-  if [ -z "$ARGS" ]; then
-    echo "⚠️  Job '$JOB_NAME' does not specify a command or args"
+  if [[ "$ARGS" == *"Hello from Kubernetes job!"* ]]; then
+    echo "✅ Job prints the correct hello message"
   else
-    echo "ℹ️  Job container args: $ARGS"
-    
-    # Check if the command contains references to copying files
-    if [[ "$ARGS" == *"/etc/config"* ]] && [[ "$ARGS" == *"/backup"* ]] && [[ "$ARGS" == *"cp"* || "$ARGS" == *"copy"* || "$ARGS" == *"mv"* ]]; then
-      echo "✅ Job contains a command that appears to copy files from /etc/config to /backup"
-    else
-      echo "⚠️  Job args do not appear to include copying files from /etc/config to /backup"
-    fi
+    echo "⚠️  Job args do not contain the expected hello message"
   fi
 else
-  echo "ℹ️  Job container command: $COMMAND"
-  
-  # Check if the command contains references to copying files
-  if [[ "$COMMAND" == *"/etc/config"* ]] && [[ "$COMMAND" == *"/backup"* ]] && [[ "$COMMAND" == *"cp"* || "$COMMAND" == *"copy"* || "$COMMAND" == *"mv"* ]]; then
-    echo "✅ Job contains a command that appears to copy files from /etc/config to /backup"
+  if [[ "$COMMAND" == *"Hello from Kubernetes job!"* ]]; then
+    echo "✅ Job prints the correct hello message"
   else
-    echo "⚠️  Job command does not appear to include copying files from /etc/config to /backup"
+    echo "⚠️  Job command does not contain the expected hello message"
   fi
 fi
 

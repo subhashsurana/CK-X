@@ -447,7 +447,7 @@
       "id": "16",
       "namespace": "cluster-admin",
       "machineHostname": "ckad9999",
-      "question": "Perform the following cluster administration tasks:\n\n1. Create a ServiceAccount named `app-admin` in the `cluster-admin` namespace\n2. Create a Role that allows:\n   - `List`, `get`, `watch` operations on `pods` and `deployments`\n   - `Create` and `delete` operations on `configmaps`\n   - `Update` operations on `deployments`\n3. Bind the Role to the ServiceAccount\n4. Create a test Pod named `admin-pod` that uses this ServiceAccount with:\n   - Image: `bitnami/kubectl:latest`\n   - Command: `sleep 3600`\n   - Mount the ServiceAccount token as a volume\n\nVerify the pod can perform the allowed operations but cannot perform other operations (like creating pods).",
+      "question": "Perform the following cluster administration tasks:\n\n1. Create a ServiceAccount named `app-admin` in the `cluster-admin` namespace\n2. Create a Role that allows:\n   - `List`, `get`, `watch` operations on `pods` and `deployments`\n   - `Create` and `delete` operations on `configmaps`\n   - `Update` operations on `deployments`\n3. Bind the Role to the ServiceAccount\n4. Create a test Pod named `admin-pod` that uses this ServiceAccount with:\n   - Image: `bitnami/kubectl:1.28`\n   - Command: `sleep 3600`\n   - Mount the ServiceAccount token as a volume\n\nVerify the pod can perform the allowed operations but cannot perform other operations (like creating pods).",
       "concepts": ["rbac", "service-accounts", "security"],
       "verification": [
         {
