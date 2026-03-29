@@ -61,6 +61,16 @@
         "examDurationInMinutes": 120
       },
       {
+        "id": "ckad-004",
+        "assetPath": "assets/exams/ckad/004",
+        "name": "CKAD Comprehensive Lab - 4",
+        "category": "CKAD",
+        "description": "High-difficulty CKAD practice with 22 tasks covering namespace isolation, Helm release workflows, local image registry usage, troubleshooting, services, probes, jobs, and persistent volume claim scenarios.",
+        "warmUpTimeInSeconds": 300,
+        "difficulty": "Hard",
+        "examDurationInMinutes": 120
+      },
+      {
         "id": "docker-001",
         "assetPath": "assets/exams/other/001",
         "name": "Docker Speed Run - Core Concepts",
