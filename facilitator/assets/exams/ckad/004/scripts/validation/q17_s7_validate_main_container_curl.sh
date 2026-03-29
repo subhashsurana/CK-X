@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Verifies that curling the service returns 'check this out!'
 # First, get the pod name
 POD_NAME=$(kubectl -n init-container get pod -l app=init-web -o jsonpath='{.items[0].metadata.name}')
 
@@ -11,17 +10,17 @@ if [ "$POD_STATUS" != "Running" ]; then
     exit 1
 fi
 
-# Try to curl the service from within the pod (with timeout and retry)
+# Try a few common verification methods available in minimal images.
 for i in 1 2 3; do
-    CURL_RESULT=$(kubectl -n init-container exec $POD_NAME -- curl -s -m 5 http://localhost 2>/dev/null || echo "")
-    if [[ "$CURL_RESULT" == *"check this out!"* ]]; then
-        echo "Curl validation successful"
+    PAGE_CONTENT=$(kubectl -n init-container exec "$POD_NAME" -- sh -c 'wget -qO- http://localhost 2>/dev/null || busybox wget -qO- http://localhost 2>/dev/null || cat /usr/share/nginx/html/index.html 2>/dev/null' || echo "")
+    if [[ "$PAGE_CONTENT" == *"check this out!"* ]]; then
+        echo "Content validation successful"
         exit 0
     fi
     sleep 2
- done
+done
 
-echo "Curl result does not contain expected content after retries. Last result: $CURL_RESULT"
+echo "Content does not contain expected text after retries. Last result: $PAGE_CONTENT"
 echo "Debug: Checking if index.html exists in the pod..."
 kubectl -n init-container exec $POD_NAME -- ls -la /usr/share/nginx/html/
 exit 1

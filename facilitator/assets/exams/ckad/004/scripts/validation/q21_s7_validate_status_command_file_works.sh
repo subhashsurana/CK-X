@@ -9,8 +9,13 @@ if [ ! -f "$STATUS_FILE" ]; then
     exit 1
 fi
 
-# Execute the command and check exit code
-if ! bash "$STATUS_FILE" >/dev/null 2>&1; then
-    echo "Status command failed or returned non-zero exit code"
+# Execute the command and capture output
+OUT=$(bash "$STATUS_FILE" 2>/dev/null || true)
+
+# It must actually describe the sunny pods
+if echo "$OUT" | grep -qi "sunny" && echo "$OUT" | grep -qi "Running"; then
+    exit 0
+else
+    echo "Status command output is missing 'sunny' pods or 'Running' state." >&2
     exit 1
 fi
