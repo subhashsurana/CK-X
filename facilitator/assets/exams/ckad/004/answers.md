@@ -17,13 +17,22 @@ kubectl get ns > /opt/course/exam4/q01/namespaces
 **Answer:**
 ```bash
 kubectl create ns single-pod || true
-kubectl run pod1 -n single-pod --image=httpd:2.4.41-alpine --restart=Never --dry-run=client -o yaml \
- | yq ".spec.containers[0].name = \"pod1-container\"" | kubectl apply -f -
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+  namespace: single-pod
+spec:
+  containers:
+  - name: pod1-container
+    image: httpd:2.4.41-alpine
+EOF
 
 mkdir -p /opt/course/exam4/q02
 cat > /opt/course/exam4/q02/pod1-status-command.sh <<'EOF'
 #!/usr/bin/env bash
-kubectl -n single-pod get pod pod1 -o wide
+kubectl -n single-pod get pod pod1 -o jsonpath='{.status.phase}'
 EOF
 chmod +x /opt/course/exam4/q02/pod1-status-command.sh
 ```
@@ -34,6 +43,7 @@ chmod +x /opt/course/exam4/q02/pod1-status-command.sh
 **Answer:**
 ```bash
 kubectl create ns jobs || true
+mkdir -p /opt/course/exam4/q03
 cat > /opt/course/exam4/q03/job.yaml <<'EOF'
 apiVersion: batch/v1
 kind: Job
@@ -65,8 +75,11 @@ kubectl apply -f /opt/course/exam4/q03/job.yaml
 helm repo add bitnami https://charts.bitnami.com/bitnami || true
 helm repo update
 helm -n helm uninstall internal-issue-report-apiv1 || true
-helm -n helm upgrade --install internal-issue-report-apiv2 bitnami/nginx
-helm -n helm upgrade --install internal-issue-report-apache bitnami/apache --set replicaCount=2
+helm -n helm upgrade --install internal-issue-report-apiv2 bitnami/nginx \
+  --set fullnameOverride=internal-issue-report-apiv2
+helm -n helm upgrade --install internal-issue-report-apache bitnami/apache \
+  --set fullnameOverride=internal-issue-report-apache \
+  --set replicaCount=2
 
 ```
 
@@ -78,6 +91,7 @@ helm -n helm upgrade --install internal-issue-report-apache bitnami/apache --set
 # Ensure namespace and SA exist (seeded in setup, but safe to re-run)
 kubectl create ns service-accounts || true
 kubectl -n service-accounts create sa neptune-sa-v2 || true
+mkdir -p /opt/course/exam4/q05
 
 # Create a bound token with audience=api and a reasonable duration
 kubectl -n service-accounts create token neptune-sa-v2 \
@@ -90,7 +104,7 @@ kubectl auth whoami --token="$(tr -d '\r\n' < /opt/course/exam4/q05/token)"
 ```
 
 ## Question 6
-**Question:** Create Pod `pod6` in Namespace `readiness` using `busybox:1.31.0` with readinessProbe executing `cat /tmp/ready` (initialDelaySeconds=`5`, periodSeconds=`10`). The container command should be `sh -c 'touch /tmp/ready && sleep 1d'`. Confirm Pod becomes Ready.
+**Question:** Create Pod `pod6` in Namespace `readiness` using `busybox:1.31.0` with readinessProbe executing `cat /tmp/ready` (initialDelaySeconds=`5`, periodSeconds=`10`). Ensure the container creates `/tmp/ready` and keeps running (for example: `touch /tmp/ready && sleep 1d`). Any equivalent command/args form is acceptable. Confirm the Pod becomes Ready.
 
 **Answer:**
 ```bash
@@ -112,6 +126,8 @@ spec:
       initialDelaySeconds: 5
       periodSeconds: 10
 EOF
+
+kubectl -n readiness wait --for=condition=Ready pod/pod6 --timeout=120s
 ```
 
 ## Question 7
@@ -119,13 +135,25 @@ EOF
 
 **Answer:**
 ```bash
-# Find by annotation, then recreate in target
-kubectl -n pod-move-source get pod -o json | jq -r '.items[] | select(.metadata.annotations.description|test("my-happy-shop")) | .metadata.name'
-kubectl -n pod-move-source get pod webserver-sat-003 -o yaml \
- | yq 'del(.metadata.namespace,.metadata.resourceVersion,.metadata.uid,.metadata.creationTimestamp,.status)' \
- | yq '.metadata.namespace = "pod-move-target"' \
- | kubectl apply -f -
-kubectl -n pod-move-source delete pod webserver-sat-003 --ignore-not-found
+POD_NAME=$(
+  kubectl -n pod-move-source get pod -o json \
+    | jq -r '.items[] | select(.metadata.annotations.description | test("my-happy-shop")) | .metadata.name'
+)
+
+kubectl -n pod-move-source get pod "${POD_NAME}" -o json \
+  | jq '
+      del(
+        .metadata.resourceVersion,
+        .metadata.uid,
+        .metadata.creationTimestamp,
+        .metadata.managedFields,
+        .status
+      )
+      | .metadata.namespace = "pod-move-target"
+    ' \
+  | kubectl apply -f -
+
+kubectl -n pod-move-source delete pod "${POD_NAME}" --ignore-not-found
 ```
 
 ## Question 8
@@ -144,12 +172,34 @@ kubectl -n rollout rollout status deploy/api-new-c32
 **Answer:**
 ```bash
 kubectl create ns convert-to-deploy || true
-kubectl -n convert-to-deploy get pod holy-api -o yaml \
- | kubectl neat 2>/dev/null \
- | yq 'del(.metadata.namespace,.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.status)' \
- | yq "{apiVersion:\"apps/v1\",kind:\"Deployment\",metadata:{name:\"holy-api\",namespace:\"convert-to-deploy\"},spec:{replicas:3,selector:{matchLabels:.metadata.labels},template:{metadata:{labels:.metadata.labels},spec:.spec}}}" \
- | yq '.spec.template.spec.containers[0].securityContext = {allowPrivilegeEscalation: false, privileged: false}' \
- | tee /opt/course/exam4/q09/holy-api-deployment.yaml | kubectl apply -f -
+mkdir -p /opt/course/exam4/q09
+cat > /opt/course/exam4/q09/holy-api-deployment.yaml <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: holy-api
+  namespace: convert-to-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: holy-api
+  template:
+    metadata:
+      labels:
+        app: holy-api
+    spec:
+      containers:
+      - name: holy
+        image: nginx:1.21.6-alpine
+        ports:
+        - containerPort: 80
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+EOF
+
+kubectl apply -f /opt/course/exam4/q09/holy-api-deployment.yaml
 kubectl -n convert-to-deploy delete pod holy-api --ignore-not-found
 ```
 
@@ -163,8 +213,12 @@ kubectl -n services-curl run project-plt-6cc-api --image=nginx:1.17.3-alpine --l
 kubectl -n services-curl expose pod project-plt-6cc-api --name=project-plt-6cc-svc --type=ClusterIP --port=3333 --target-port=80
 
 mkdir -p /opt/course/exam4/q10
-kubectl -n services-curl run tmp --rm --image=nginx:alpine --restart=Never -- bash -c 'apk add --no-cache curl >/dev/null && curl -s project-plt-6cc-svc:3333' > /opt/course/exam4/q10/service_test.html
+kubectl -n services-curl wait --for=condition=Ready pod/project-plt-6cc-api --timeout=120s
+kubectl -n services-curl run curl-tmp --image=curlimages/curl:8.10.1 --restart=Never --command -- sleep 300
+kubectl -n services-curl wait --for=condition=Ready pod/curl-tmp --timeout=120s
+kubectl -n services-curl exec curl-tmp -- curl -fsS --retry 30 --retry-all-errors --retry-delay 2 http://project-plt-6cc-svc.services-curl.svc.cluster.local:3333 > /opt/course/exam4/q10/service_test.html
 kubectl -n services-curl logs pod/project-plt-6cc-api > /opt/course/exam4/q10/service_test.log
+kubectl -n services-curl delete pod curl-tmp --ignore-not-found
 ```
 
 ## Question 11
@@ -203,7 +257,7 @@ func main(){
 }
 EOF
 # Update Dockerfile (Step 1)
-sed -i '' 's/^ENV SUN_CIPHER_ID=.*/ENV SUN_CIPHER_ID=5b9c1065-e39d-4a43-a04a-e59bcea3e03f/' /opt/course/exam4/q11/image/Dockerfile
+sed -i 's/^ENV SUN_CIPHER_ID=.*/ENV SUN_CIPHER_ID=5b9c1065-e39d-4a43-a04a-e59bcea3e03f/' /opt/course/exam4/q11/image/Dockerfile
 
 # Build and push with Docker (Step 2)
 cd /opt/course/exam4/q11/image
@@ -211,6 +265,7 @@ docker build -t localhost:5000/sun-cipher:v1-docker .
 docker push localhost:5000/sun-cipher:v1-docker
 
 # Run container (Step 3)
+docker rm -f sun-cipher >/dev/null 2>&1 || true
 docker run -d --name sun-cipher localhost:5000/sun-cipher:v1-docker
 
 # Capture logs (Step 4)
@@ -218,10 +273,11 @@ docker logs sun-cipher > /opt/course/exam4/q11/logs
 ```
 
 ## Question 12
-**Question:** Create a new PersistentVolume named `earth-project-earthflower-pv`. It must have capacity `2Gi`, accessMode `ReadWriteOnce`, use `hostPath` `/Volumes/Data`, and must not define a `storageClassName`. Next, in Namespace `storage-hostpath`, create a PersistentVolumeClaim named `earth-project-earthflower-pvc` requesting `2Gi` storage with accessMode `ReadWriteOnce`, and do not define a `storageClassName`. Ensure the PVC binds to the PV. Finally, in Namespace `storage-hostpath`, create a Deployment named `project-earthflower` whose Pods use image `httpd:2.4.41-alpine` and mount the claim at `/tmp/project-data`.
+**Question:** Create a new PersistentVolume named `earth-project-earthflower-pv`. It must have capacity `2Gi`, accessMode `ReadWriteOnce`, use `hostPath` `/Volumes/Data` with `type: DirectoryOrCreate`, and must not define a `storageClassName`. Next, in Namespace `storage-hostpath`, create a PersistentVolumeClaim named `earth-project-earthflower-pvc` requesting `2Gi` storage with accessMode `ReadWriteOnce`, and explicitly set `storageClassName: ""` so no default StorageClass is assigned. Ensure the PVC binds to the PV. Finally, in Namespace `storage-hostpath`, create a Deployment named `project-earthflower` whose Pods use image `httpd:2.4.41-alpine` and mount the claim at `/tmp/project-data`.
 
 **Answer:**
 ```bash
+kubectl create ns storage-hostpath || true
 cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolume
@@ -245,6 +301,7 @@ spec:
   resources:
     requests:
       storage: 2Gi
+  storageClassName: ""
 EOF
 cat <<'EOF' | kubectl apply -f -
 apiVersion: apps/v1
@@ -271,6 +328,11 @@ spec:
         persistentVolumeClaim:
           claimName: earth-project-earthflower-pvc
 EOF
+
+kubectl -n storage-hostpath wait \
+  --for=jsonpath='{.status.phase}'=Bound \
+  pvc/earth-project-earthflower-pvc \
+  --timeout=120s
 ```
 
 ## Question 13
@@ -279,6 +341,7 @@ EOF
 **Answer:**
 ```bash
 kubectl create ns pvc-pending || true
+mkdir -p /opt/course/exam4/q13
 cat <<'EOF' | kubectl apply -f -
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -304,26 +367,55 @@ kubectl -n pvc-pending describe pvc moon-pvc-126 | sed -n '/Events/,$p' > /opt/c
 ```
 
 ## Question 14
-**Question:** In Namespace `secrets-cm`, create Secret `secret1` (user=`test`, pass=`pwd`) and make it available in Pod `secret-handler` as env vars `SECRET1_USER` and `SECRET1_PASS`. Also create ConfigMap `configmap1` and mount it at `/tmp/secret2` in the same Pod. Save updated YAML to `/opt/course/exam4/q14/secret-handler-new.yaml`.
+**Question:** In Namespace `secrets-cm`, create Secret `secret1` (user=`test`, pass=`pwd`) and make it available in Pod `secret-handler` as env vars `SECRET1_USER` and `SECRET1_PASS`. Also create ConfigMap `configmap1` and mount it at `/tmp/configmap1` in the same Pod. Save updated YAML to `/opt/course/exam4/q14/secret-handler-new.yaml`.
 
 **Answer:**
 ```bash
 kubectl create ns secrets-cm || true
-kubectl -n secrets-cm create secret generic secret1 --from-literal=user=test --from-literal=pass=pwd
-kubectl -n secrets-cm create configmap configmap1 --from-literal=example=ok
-# Edit the existing pod to include envFrom/volumes then save:
-kubectl -n secrets-cm get pod secret-handler -o yaml > /opt/course/exam4/q14/secret-handler-new.yaml
-# Edit file to add:
-# env:
-# - name: SECRET1_USER
-#   valueFrom: {secretKeyRef: {name: secret1, key: user}}
-# - name: SECRET1_PASS
-#   valueFrom: {secretKeyRef: {name: secret1, key: pass}}
-# volumes:
-# - name: configmap1
-#   configMap: {name: configmap1}
-# volumeMounts:
-# - {name: configmap1, mountPath: /tmp/configmap1}
+kubectl -n secrets-cm create secret generic secret1 \
+  --from-literal=user=test \
+  --from-literal=pass=pwd \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n secrets-cm create configmap configmap1 \
+  --from-literal=example=ok \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+mkdir -p /opt/course/exam4/q14
+cat > /opt/course/exam4/q14/secret-handler-new.yaml <<'EOF'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-handler
+  namespace: secrets-cm
+spec:
+  containers:
+  - name: app
+    image: nginx:1.21.6-alpine
+    env:
+    - name: SECRET1_USER
+      valueFrom:
+        secretKeyRef:
+          name: secret1
+          key: user
+    - name: SECRET1_PASS
+      valueFrom:
+        secretKeyRef:
+          name: secret1
+          key: pass
+    volumeMounts:
+    - name: configmap1
+      mountPath: /tmp/configmap1
+  volumes:
+  - name: configmap1
+    configMap:
+      name: configmap1
+EOF
+
+kubectl -n secrets-cm delete pod secret-handler --ignore-not-found
+kubectl -n secrets-cm wait --for=delete pod/secret-handler --timeout=120s || true
+kubectl apply -f /opt/course/exam4/q14/secret-handler-new.yaml
+kubectl -n secrets-cm wait --for=condition=Ready pod/secret-handler --timeout=120s
 ```
 
 ## Question 15
@@ -333,16 +425,10 @@ kubectl -n secrets-cm get pod secret-handler -o yaml > /opt/course/exam4/q14/sec
 ```bash
 kubectl create ns configmap-web || true
 mkdir -p /opt/course/exam4/q15
-cat > /opt/course/exam4/q15/configmap.yaml <<'EOF'
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: configmap-web-moon-html
-  namespace: configmap-web
-data:
-  index.html: |
-EOF
-sed 's/^/    /' /opt/course/exam4/q15/web-moon.html >> /opt/course/exam4/q15/configmap.yaml
+kubectl -n configmap-web create configmap configmap-web-moon-html \
+  --from-file=index.html=/opt/course/exam4/q15/web-moon.html \
+  --dry-run=client -o yaml \
+  > /opt/course/exam4/q15/configmap.yaml
 kubectl apply -f /opt/course/exam4/q15/configmap.yaml
 ```
 
@@ -352,7 +438,7 @@ kubectl apply -f /opt/course/exam4/q15/configmap.yaml
 **Answer:**
 ```bash
 kubectl create ns sidecar-logging || true
-# Create the updated deployment with sidecar container
+mkdir -p /opt/course/exam4/q16
 cat > /opt/course/exam4/q16/cleaner-new.yaml <<'EOF'
 apiVersion: apps/v1
 kind: Deployment
@@ -376,7 +462,7 @@ spec:
           mountPath: /var/log/cleaner
       - name: logger-con
         image: busybox:1.31.0
-        command: ["/bin/sh","-c","tail -f /var/log/cleaner/cleaner.log"]
+        command: ["tail","-f","/var/log/cleaner/cleaner.log"]
         volumeMounts:
         - name: logs
           mountPath: /var/log/cleaner
@@ -393,8 +479,7 @@ kubectl apply -f /opt/course/exam4/q16/cleaner-new.yaml
 
 **Answer:**
 ```bash
-# Edit test-init-container.yaml to add init container busybox:1.31.0 that writes /usr/share/nginx/html/index.html
-# The init container should mount the 'html' volume at /usr/share/nginx/html and write the content
+mkdir -p /opt/course/exam4/q17
 cat > /opt/course/exam4/q17/test-init-container-new.yaml <<'EOF'
 apiVersion: apps/v1
 kind: Deployment
@@ -412,7 +497,7 @@ spec:
       initContainers:
       - name: init-con
         image: busybox:1.31.0
-        command: ["/bin/sh", "-c", "echo 'check this out!' > /usr/share/nginx/html/index.html"]
+        command: ["/bin/sh","-c","echo check this out! > /usr/share/nginx/html/index.html"]
         volumeMounts:
         - name: html
           mountPath: /usr/share/nginx/html
@@ -428,6 +513,9 @@ spec:
 EOF
 
 kubectl apply -f /opt/course/exam4/q17/test-init-container-new.yaml
+kubectl -n init-container rollout status deploy/test-init-container --timeout=120s
+POD=$(kubectl -n init-container get pod -l app=init-web -o jsonpath='{.items[0].metadata.name}')
+kubectl -n init-container exec "$POD" -- wget -qO- http://localhost | grep -F 'check this out!'
 ```
 
 ## Question 18
@@ -478,9 +566,10 @@ spec:
     protocol: TCP
 EOF
 
-# Verify the service is reachable (in single-node clusters, use localhost)
-POD_NAME=$(kubectl -n nodeport-30100 get pod -l app=jupiter -o jsonpath='{.items[0].metadata.name}')
-kubectl -n nodeport-30100 exec $POD_NAME -- curl -s http://localhost:30100
+# Verify the service is reachable via a node IP from the jumphost
+NODE_IP=$(kubectl get nodes -o wide --no-headers | awk 'NR==1{print $6}')
+curl -fsS "http://${NODE_IP}:30100" >/dev/null \
+  || ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null candidate@k8s-api-server "curl -fsS http://127.0.0.1:30100 >/dev/null"
 ```
 
 ## Preview P1 (Q20)
@@ -488,7 +577,7 @@ kubectl -n nodeport-30100 exec $POD_NAME -- curl -s http://localhost:30100
 
 **Answer:**
 ```bash
-# Create deployment with liveness probe
+mkdir -p /opt/course/exam4/p1
 cat > /opt/course/exam4/p1/project-23-api-new.yaml <<'EOF'
 apiVersion: apps/v1
 kind: Deployment
@@ -525,9 +614,9 @@ kubectl apply -f /opt/course/exam4/p1/project-23-api-new.yaml
 ```bash
 kubectl create ns p2-deploy-svc || true
 kubectl -n p2-deploy-svc create sa sa-sun-deploy || true
+mkdir -p /opt/course/exam4/p2
 
-# Create deployment with service account
-cat > /opt/course/exam4/p2/sunny-deployment.yaml <<'EOF'
+cat <<'EOF' | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -551,16 +640,12 @@ spec:
         - containerPort: 80
 EOF
 
-kubectl apply -f /opt/course/exam4/p2/sunny-deployment.yaml
-
-# Create service
 kubectl -n p2-deploy-svc expose deploy sunny --name=sun-srv --type=ClusterIP --port=9999 --target-port=80
 
-# Create status command
 mkdir -p /opt/course/exam4/p2
 cat > /opt/course/exam4/p2/sunny_status_command.sh <<'EOF'
 #!/usr/bin/env bash
-kubectl -n p2-deploy-svc get pods -l app=sunny --field-selector=status.phase=Running
+kubectl -n p2-deploy-svc get pods -l app=sunny --no-headers
 EOF
 chmod +x /opt/course/exam4/p2/sunny_status_command.sh
 ```
@@ -570,37 +655,15 @@ chmod +x /opt/course/exam4/p2/sunny_status_command.sh
 
 **Answer:**
 ```bash
-# Fix the readiness probe port to match the container port (80 instead of 8081)
-cat <<'EOF' | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: earth-3cc-web
-  namespace: p3-readiness
-spec:
-  replicas: 4
-  selector:
-    matchLabels: {app: e3cc}
-  template:
-    metadata:
-      labels: {app: e3cc}
-    spec:
-      containers:
-      - name: web
-        image: nginx:1.21.6-alpine
-        ports:
-        - containerPort: 80
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 5
-EOF
+mkdir -p /opt/course/exam4/p3
+# Fix only the broken readiness probe port on the existing Deployment
+kubectl -n p3-readiness patch deployment earth-3cc-web \
+  --type='json' \
+  -p='[{"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe/httpGet/port","value":80}]'
 
 # Write ticket description
 echo "The readiness probe was configured to use port 8081, but the container only exposes port 80. Fixed the readinessProbe port to match the containerPort (80)." > /opt/course/exam4/p3/ticket-description.txt
 
 # Verify pods become ready
-kubectl -n p3-readiness wait --for=condition=Ready pod -l app=e3cc --timeout=60s
+kubectl -n p3-readiness rollout status deploy/earth-3cc-web --timeout=120s
 ```
