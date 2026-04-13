@@ -1,0 +1,391 @@
+{
+  "questions": [
+    {
+      "id": "1",
+      "namespace": "production",
+      "machineHostname": "controlplane",
+      "question": "A pod named `app-frontend` in namespace `production` is stuck in `CrashLoopBackOff`. The container looks for a config file at `/etc/app/config.yaml` which does not exist in the image.\n\n1. Create a ConfigMap named `app-config` in namespace `production` with key `config.yaml` and value `database_host: postgres.production.svc.cluster.local`\n2. Update the existing pod `app-frontend` to mount this ConfigMap as a file at `/etc/app/config.yaml`\n3. Verify the pod reaches Running state",
+      "concepts": ["configmap", "volumes", "troubleshooting"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "ConfigMap app-config exists with correct data",
+          "verificationScriptFile": "q1_s1_validate_configmap.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "Pod app-frontend is Running",
+          "verificationScriptFile": "q1_s2_validate_pod_running.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        },
+        {
+          "id": "3",
+          "description": "ConfigMap is mounted as file at /etc/app/config.yaml",
+          "verificationScriptFile": "q1_s3_validate_mount.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "namespace": "staging",
+      "machineHostname": "controlplane",
+      "question": "A developer needs to list Pods and Deployments in the `staging` namespace only.\n\n1. Create a Role named `dev-role` in namespace `staging` that allows `get`, `list`, `watch` on `pods` and `deployments`\n2. Create a RoleBinding named `dev-binding` in namespace `staging` that grants this Role to user `dev-user`\n3. Verify: `kubectl auth can-i list pods -n staging --as=dev-user` returns `yes`",
+      "concepts": ["rbac", "roles", "rolebindings"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Role dev-role exists with correct permissions",
+          "verificationScriptFile": "q2_s1_validate_role.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "RoleBinding dev-binding exists and binds dev-user",
+          "verificationScriptFile": "q2_s2_validate_rolebinding.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "3",
+          "description": "dev-user can list pods in staging",
+          "verificationScriptFile": "q2_s3_validate_permissions.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "namespace": "default",
+      "machineHostname": "controlplane",
+      "question": "Node `k3d-cluster-agent-1` needs to be prepared for maintenance.\n\n1. Cordon the node so no new pods are scheduled on it\n2. Drain all evictable pods from the node (ignore DaemonSets, delete emptyDir data)\n3. Verify the node shows `SchedulingDisabled` and no non-DaemonSet pods remain on it",
+      "concepts": ["node-management", "drain", "cordon"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "k3d-cluster-agent-1 is cordoned (SchedulingDisabled)",
+          "verificationScriptFile": "q3_s1_validate_cordoned.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "No non-DaemonSet pods running on k3d-cluster-agent-1",
+          "verificationScriptFile": "q3_s2_validate_drained.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "namespace": "databases",
+      "machineHostname": "controlplane",
+      "question": "The deployment `db-app` in namespace `databases` needs persistent storage.\n\n1. Create a PersistentVolume named `db-pv` with 5Gi capacity, `ReadWriteOnce` access mode, `Retain` reclaim policy, storageClassName `fast-ssd`, and hostPath `/data/db`\n2. Create a PersistentVolumeClaim named `db-pvc` in namespace `databases` requesting 5Gi with storageClassName `fast-ssd`\n3. Update deployment `db-app` to mount `db-pvc` at `/data`",
+      "concepts": ["storage", "pv", "pvc", "deployments"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "PersistentVolume db-pv exists with correct spec",
+          "verificationScriptFile": "q4_s1_validate_pv.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "PVC db-pvc is Bound",
+          "verificationScriptFile": "q4_s2_validate_pvc.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "3",
+          "description": "Deployment db-app mounts db-pvc at /data",
+          "verificationScriptFile": "q4_s3_validate_mount.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "namespace": "shop",
+      "machineHostname": "controlplane",
+      "question": "Implement network isolation for namespace `shop`:\n\n1. Create NetworkPolicy `frontend-policy` so pods with label `tier=frontend` only accept ingress on port 80\n2. Create NetworkPolicy `backend-policy` so pods with label `tier=backend` only accept ingress from pods with `tier=frontend` on port 3000\n3. Create NetworkPolicy `database-policy` so pods with label `tier=database` only accept ingress from pods with `tier=backend` on port 5432",
+      "concepts": ["networkpolicy", "networking"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "NetworkPolicy frontend-policy exists with correct spec",
+          "verificationScriptFile": "q5_s1_validate_frontend_policy.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "NetworkPolicy backend-policy exists with correct spec",
+          "verificationScriptFile": "q5_s2_validate_backend_policy.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "3",
+          "description": "NetworkPolicy database-policy exists with correct spec",
+          "verificationScriptFile": "q5_s3_validate_database_policy.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "namespace": "monitoring",
+      "machineHostname": "controlplane",
+      "question": "Deploy the `prometheus-community/kube-prometheus-stack` Helm chart with the following overrides:\n\n1. Create namespace `monitoring` if it does not exist\n2. Add the Helm repo: `https://prometheus-community.github.io/helm-charts`\n3. Install the chart as release name `monitoring-stack` in namespace `monitoring` with: `replicaCount=1` and `prometheusOperator.enabled=false`\n4. Verify the release is deployed",
+      "concepts": ["helm", "namespaces"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Namespace monitoring exists",
+          "verificationScriptFile": "q6_s1_validate_namespace.sh",
+          "expectedOutput": "0",
+          "weightage": 1
+        },
+        {
+          "id": "2",
+          "description": "Helm release monitoring-stack is deployed",
+          "verificationScriptFile": "q6_s2_validate_helm_release.sh",
+          "expectedOutput": "0",
+          "weightage": 4
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "namespace": "default",
+      "machineHostname": "controlplane",
+      "question": "Create a high-priority workload:\n\n1. Create a PriorityClass named `high-priority` with value `100000`, `globalDefault: false`, and `preemptionPolicy: PreemptLowerPriority`\n2. Create a Pod named `important-nginx` in namespace `default` using image `nginx:1.27`\n3. Configure the pod to use `priorityClassName: high-priority`\n4. Verify the pod is Running",
+      "concepts": ["scheduling", "priorityclass", "pods"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "PriorityClass high-priority exists with correct settings",
+          "verificationScriptFile": "q7_s1_validate_priorityclass.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "Pod important-nginx uses the high-priority PriorityClass",
+          "verificationScriptFile": "q7_s2_validate_priority_pod.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "namespace": "production",
+      "machineHostname": "controlplane",
+      "question": "The deployment `web-app` in namespace `production` needs autoscaling.\n\n1. Create a HorizontalPodAutoscaler named `web-app-hpa` targeting deployment `web-app`\n2. Minimum replicas: 2, Maximum replicas: 10\n3. Scale up when average CPU utilization exceeds 70%\n4. Verify the HPA is created and shows the correct targets",
+      "concepts": ["hpa", "autoscaling"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "HPA web-app-hpa exists targeting web-app",
+          "verificationScriptFile": "q8_s1_validate_hpa_exists.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "HPA has correct min/max replicas and CPU target",
+          "verificationScriptFile": "q8_s2_validate_hpa_config.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "namespace": "default",
+      "machineHostname": "controlplane",
+      "question": "Expose service `api` via Ingress with TLS:\n\n1. Create an Ingress named `api-ingress` in namespace `default`\n2. Hostname: `api.example.com`\n3. Route path `/api` (Prefix) to service `api` on port 80\n4. Enable TLS using secret `api-tls-cert`\n5. Use ingressClassName `nginx`",
+      "concepts": ["ingress", "tls", "networking"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Ingress api-ingress exists with correct hostname",
+          "verificationScriptFile": "q9_s1_validate_ingress.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "Ingress has TLS configured with correct secret",
+          "verificationScriptFile": "q9_s2_validate_tls.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "3",
+          "description": "Ingress routes /api to service api on port 80",
+          "verificationScriptFile": "q9_s3_validate_backend.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "namespace": "kube-system",
+      "machineHostname": "controlplane",
+      "question": "The deployment `broken-web` in namespace `troubleshooting` is not becoming Ready.\n\n1. Inspect the deployment and its pods to find the issue\n2. Fix the deployment so it uses image `nginx:1.27`\n3. Ensure the deployment has 2 available replicas\n4. Verify the pods are Running and Ready",
+      "concepts": ["troubleshooting", "deployments", "workloads"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Deployment broken-web has 2 available replicas",
+          "verificationScriptFile": "q10_s1_validate_deployment_available.sh",
+          "expectedOutput": "0",
+          "weightage": 4
+        },
+        {
+          "id": "2",
+          "description": "Deployment broken-web uses image nginx:1.27",
+          "verificationScriptFile": "q10_s2_validate_deployment_image.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "namespace": "databases",
+      "machineHostname": "controlplane",
+      "question": "Deploy a StatefulSet named `database-cluster` in namespace `databases`:\n\n1. 3 replicas using image `postgres:15`\n2. Each pod gets a 10Gi PVC via `volumeClaimTemplates` with storageClassName `standard`\n3. Create a headless Service named `database-cluster` exposing port 5432\n4. Pods should have stable DNS: `database-cluster-0.database-cluster.databases.svc.cluster.local`",
+      "concepts": ["statefulset", "headless-service", "storage"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "StatefulSet database-cluster exists with 3 replicas",
+          "verificationScriptFile": "q11_s1_validate_statefulset.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        },
+        {
+          "id": "2",
+          "description": "Headless service database-cluster exists on port 5432",
+          "verificationScriptFile": "q11_s2_validate_headless_svc.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "namespace": "test",
+      "machineHostname": "controlplane",
+      "question": "Limit resource consumption in namespace `test`:\n\n1. Create a ResourceQuota named `test-quota` limiting the namespace to: `requests.cpu=4`, `limits.cpu=8`, `requests.memory=8Gi`, `limits.memory=16Gi`, `pods=20`\n2. Create a LimitRange named `test-limits` with default container request of `100m` CPU and `128Mi` memory\n3. Verify a pod requesting more than the quota is rejected",
+      "concepts": ["resource-quota", "limit-range", "namespaces"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "ResourceQuota test-quota exists with correct limits",
+          "verificationScriptFile": "q12_s1_validate_quota.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        },
+        {
+          "id": "2",
+          "description": "LimitRange test-limits exists with correct defaults",
+          "verificationScriptFile": "q12_s2_validate_limitrange.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "namespace": "restricted",
+      "machineHostname": "controlplane",
+      "question": "Configure Pod Security Standards for namespace `restricted`:\n\n1. Label namespace `restricted` to enforce Pod Security Standard level `restricted`\n2. Label namespace `restricted` to audit at level `baseline`\n3. Test: attempt to create a pod with `privileged: true` and verify it is denied\n4. Create a compliant pod named `secure-pod` using image `nginx:1.27` that passes the restricted policy",
+      "concepts": ["pod-security-standards", "security", "namespaces"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Namespace restricted has correct PSS enforce label",
+          "verificationScriptFile": "q13_s1_validate_pss_enforce.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "Namespace restricted has correct PSS audit label",
+          "verificationScriptFile": "q13_s2_validate_pss_audit.sh",
+          "expectedOutput": "0",
+          "weightage": 1
+        },
+        {
+          "id": "3",
+          "description": "Compliant pod secure-pod is running in restricted namespace",
+          "verificationScriptFile": "q13_s3_validate_compliant_pod.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "namespace": "default",
+      "machineHostname": "controlplane",
+      "question": "Create a multi-container pod named `app-with-logger`:\n\n1. Main container named `nginx` using image `nginx:1.27`, writes access logs to `/var/log/nginx/access.log` via a shared volume\n2. Sidecar container named `log-streamer` using image `busybox:1.36` that tails `/logs/access.log` to stdout (use native sidecar: `initContainer` with `restartPolicy: Always`)\n3. Both containers share an `emptyDir` volume: main mounts at `/var/log/nginx`, sidecar mounts at `/logs`\n4. Verify both containers are running",
+      "concepts": ["multi-container", "sidecar", "volumes"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Pod app-with-logger exists and is Running",
+          "verificationScriptFile": "q14_s1_validate_pod.sh",
+          "expectedOutput": "0",
+          "weightage": 2
+        },
+        {
+          "id": "2",
+          "description": "Pod has native sidecar init container log-streamer",
+          "verificationScriptFile": "q14_s2_validate_sidecar.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        }
+      ]
+    },
+    {
+      "id": "15",
+      "namespace": "default",
+      "machineHostname": "controlplane",
+      "question": "Create a namespace resource backup:\n\n1. Export the resources in namespace `backup-task` to `/opt/backup-task.yaml`\n2. The backup must include the Deployment `backup-app`\n3. The backup must include the ConfigMap `app-settings`\n4. Verify the file contains both resources",
+      "concepts": ["backup", "kubectl", "cluster-administration"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Namespace backup file exists at /opt/backup-task.yaml",
+          "verificationScriptFile": "q15_s1_validate_backup_exists.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        },
+        {
+          "id": "2",
+          "description": "Backup file contains the expected namespace resources",
+          "verificationScriptFile": "q15_s2_validate_backup_contents.sh",
+          "expectedOutput": "0",
+          "weightage": 3
+        }
+      ]
+    }
+  ]
+}

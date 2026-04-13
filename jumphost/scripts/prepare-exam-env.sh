@@ -69,8 +69,10 @@ done
 
 echo "API server is ready"
 
-#Run setup scripts
-for script in /tmp/exam-assets/scripts/setup/q*_setup.sh; do $script; done
+#Run setup scripts in numeric question order
+find /tmp/exam-assets/scripts/setup -maxdepth 1 -type f -name 'q*_setup.sh' | sort -V | while IFS= read -r script; do
+  "$script"
+done
 
 log "Exam environment preparation completed successfully"
-exit 0 
+exit 0

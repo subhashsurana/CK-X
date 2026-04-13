@@ -41,6 +41,16 @@
         "examDurationInMinutes": 120
       },
       {
+        "id": "cka-003",
+        "assetPath": "assets/exams/cka/003",
+        "name": "CKA Practice Lab - Mock Exam 01",
+        "category": "CKA",
+        "description": "CKA practice lab adapted from mock exam tasks covering troubleshooting, RBAC, storage, network policies, Helm, autoscaling, ingress, stateful workloads, resource controls, Pod Security Standards, sidecars, and resource backup workflows.",
+        "warmUpTimeInSeconds": 360,
+        "difficulty": "Hard",
+        "examDurationInMinutes": 120
+      },
+      {
         "id": "cka-001",
         "assetPath": "assets/exams/cka/001",
         "name": "CKA Practice Lab - Core Concepts",
