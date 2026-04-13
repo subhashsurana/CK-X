@@ -51,6 +51,16 @@
         "examDurationInMinutes": 120
       },
       {
+        "id": "cka-004",
+        "assetPath": "assets/exams/cka/004",
+        "name": "CKA Practice Lab - Mock Exam 02",
+        "category": "CKA",
+        "description": "CKA practice lab adapted from Mock Exam 02 covering Service DNS, rollouts, Secrets, DaemonSets, Service troubleshooting, ConfigMaps, PriorityClass, NodePort Services, CronJobs, CSRs, PDBs, CRDs, Pod Security Standards, StorageClasses, and resource governance.",
+        "warmUpTimeInSeconds": 360,
+        "difficulty": "Hard",
+        "examDurationInMinutes": 120
+      },
+      {
         "id": "cka-001",
         "assetPath": "assets/exams/cka/001",
         "name": "CKA Practice Lab - Core Concepts",
